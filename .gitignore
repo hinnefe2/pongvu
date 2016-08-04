@@ -87,3 +87,9 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# the video files
+*.h264
+
+# vim undo files
+*.un~
