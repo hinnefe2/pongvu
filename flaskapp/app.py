@@ -2,17 +2,39 @@ import datetime as dt
 import subprocess
 from threading import Thread
 
+import picamera as pc
 
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, url_for
 
-AWS_INSTANCE_IP = '52.87.191.99'
+AWS_INSTANCE_IP = '54.209.52.220'
+
+recorder = MatchRecorder(filename)
 
 app = Flask(__name__)
+
+class MatchRecorder:
+
+    def __init__(self):
+        self.filename = None
+        self.recording_thread = None
+        self.camera = pc.PiCamera(resolution=(640, 480), framerate=90)
+
+    def start_recording(self):
+        self.recording_thread = Thread(target=self._start).start()
+
+    def stop_recording(self):
+        self._stop()
+
+    def _start(self):
+        self.camera.start_recording(self.filename)
+
+    def _stop(self):
+        self.camera.stop_recording()
 
 
 @app.route('/')
 def index():
-    return 'Hello world'
+    return redirect(url_for('newgame'))
 
 
 @app.route('/newgame')
@@ -31,6 +53,9 @@ def match():
     # generate filename to save video to
     filename = '{}_vs_{}_{}.h264'.format(player_west, player_east, start_time)
 
+    recorder.filename = filename
+    recorder.start_recording()
+
     return render_template('match.html', 
                 player_west=player_west, 
                 player_east=player_east, 
@@ -40,6 +65,9 @@ def match():
 @app.route('/upload', methods=['POST'])
 def upload():
     """Upload the video file and show its name"""
+
+    recorder.stop_recording()
+
     # get the filename the video was recorded to
     filename = request.form['filename']
 
@@ -57,9 +85,12 @@ def upload_video_file(filename):
                     filename,
                     AWS_INSTANCE_IP)
 
-    # upload the file in a new thread
+    # run the bash command to upload the file
     subprocess.call(bash_cmd, shell=True)
 
 
+
+
 if __name__ == '__main__':
+
     app.run()
