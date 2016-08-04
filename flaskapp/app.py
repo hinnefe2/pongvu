@@ -4,6 +4,7 @@ from threading import Thread
 
 from flask import Flask, render_template, request, redirect
 
+import picamera as pc
 from gamesaver import GameSaver
 
 AWS_INSTANCE_IP = '54.209.52.220'
@@ -13,7 +14,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return 'Hello world'
+    return redirect(url_for('newgame'))
 
 
 @app.route('/newgame')
@@ -66,8 +67,10 @@ def upload_video_file(filename):
                     filename,
                     AWS_INSTANCE_IP)
 
-    # upload the file in a new thread
+    # run the bash command to upload the file
     subprocess.call(bash_cmd, shell=True)
+
+
 
 
 if __name__ == '__main__':
